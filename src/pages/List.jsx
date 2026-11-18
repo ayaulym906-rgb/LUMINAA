@@ -2,34 +2,14 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useApp } from '../store/AppContext';
 
-// Zергерлік өнімдердің қазақша атаулары мен бағалары
-const jewelryNames = {
-  1: { title: "Lumina Gold Гауһар Алқасы", priceNum: 85000, price: "85 000 ₸", category: "Алқа" },
-  2: { title: "Silver Shine Күміс Сақинасы", priceNum: 32000, price: "32 000 ₸", category: "Сақина" },
-  3: { title: "Crystal Swan Аққу Сырғасы", priceNum: 45000, price: "45 000 ₸", category: "Сырға" },
-  4: { title: "Royal Pearl Маржан Білезігі", priceNum: 60000, price: "60 000 ₸", category: "Білезік" },
-  5: { title: "Golden Sun Алтын Жүзігі", priceNum: 75000, price: "75 000 ₸", category: "Сақина" },
-  6: { title: "Diamond Drop Бриллиант Алқасы", priceNum: 120000, price: "120 000 ₸", category: "Алқа" },
-  7: { title: "Lumina Classic Сағат Баулығы", priceNum: 95000, price: "95 000 ₸", category: "Аксессуар" },
-  8: { title: "Eternal Sparkle Гауһар Сырғасы", priceNum: 110000, price: "110 000 ₸", category: "Сырға" },
-  9: { title: "Royal Heart Сақинасы", priceNum: 145000, price: "145 000 ₸", category: "Сақина" },
-  10: { title: "Emerald Empress Алқасы", priceNum: 180000, price: "180 000 ₸", category: "Алқа" },
-  11: { title: "Asscher Luminesce Сырғасы", priceNum: 135000, price: "135 000 ₸", category: "Сырға" },
-  12: { title: "Cushion Royal Білезік Комплекті", priceNum: 210000, price: "210 000 ₸", category: "Білезік" },
-  13: {title: "Aurum & Platinum Duet» Брошьы", priceNum: 450000, price: "450 000 ₸", category: "Аксессуар"},
-  14: {title: "The Diamond Cascade» Брошьы", priceNum: 800000, price: "800 000 ₸", category: "Аксессуар"},
-};
+// "85 000 ₸" -> 85000 (бағаны сұрыптау үшін)
+const getPriceNum = (price) => Number(String(price).replace(/\D/g, '')) || 0;
 
 export default function List() {
-  const { favorites, toggleFavorite, theme } = useApp();
+  const { products, productsLoading, favorites, toggleFavorite, theme } = useApp();
 
-  // 12 өнімді тікелей массив түріне айналдырамыз
-  const [items] = useState(
-    Object.entries(jewelryNames).map(([id, val]) => ({
-      id: Number(id),
-      ...val
-    }))
-  );
+  // Тауарлар енді Supabase базасынан келеді
+  const items = products.map((p) => ({ ...p, priceNum: getPriceNum(p.price) }));
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('Барлығы');
@@ -50,16 +30,16 @@ export default function List() {
 
   return (
     <div style={{ maxWidth: '800px', margin: '40px auto', padding: '0 20px', fontFamily: 'sans-serif' }}>
-      
+
       {/* Топ пен қатысушының Аты-жөні */}
-      <div style={{ 
-        marginBottom: '20px', 
-        padding: '12px 20px', 
-        background: theme === 'dark' ? '#1e1e1e' : '#fdfbf7', 
-        border: '1px solid #e6dcc6', 
-        borderRadius: '8px', 
-        display: 'flex', 
-        justifyContent: 'space-between', 
+      <div style={{
+        marginBottom: '20px',
+        padding: '12px 20px',
+        background: theme === 'dark' ? '#1e1e1e' : '#fdfbf7',
+        border: '1px solid #e6dcc6',
+        borderRadius: '8px',
+        display: 'flex',
+        justifyContent: 'space-between',
         fontSize: '14px',
         color: theme === 'dark' ? '#D4AF37' : '#8c7835'
       }}>
@@ -74,7 +54,7 @@ export default function List() {
 
       {/* Іздеу және Сұрыптау панелі */}
       <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', flexWrap: 'wrap' }}>
-        <input 
+        <input
           type="text"
           placeholder="🔍 Әшекейді іздеу..."
           value={searchQuery}
@@ -135,18 +115,22 @@ export default function List() {
         ))}
       </div>
 
-      {/* Тізім немесе егер табылмаasa */}
-      {filteredItems.length === 0 ? (
+      {/* Жүктелу / бос тізім / тізім */}
+      {productsLoading ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: theme === 'dark' ? '#aaa' : '#666' }}>
+          <p style={{ fontSize: '16px' }}>Жүктелуде...</p>
+        </div>
+      ) : filteredItems.length === 0 ? (
         <div style={{ textAlign: 'center', padding: '40px', color: theme === 'dark' ? '#aaa' : '#666' }}>
           <p style={{ fontSize: '16px' }}>🔍 Іздеу бойынша ешқандай әшекей табылмады.</p>
         </div>
       ) : (
         <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: '15px' }}>
           {filteredItems.map((item) => {
-            const isFavorite = favorites.includes(item.id);
+            const isFavorite = favorites.some((f) => f.id === item.id);
             return (
               <li key={item.id} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <Link 
+                <Link
                   to={`/list/${item.id}`}
                   style={{
                     flex: 1,
@@ -171,7 +155,7 @@ export default function List() {
                       {item.title}
                     </span>
                   </div>
-                  
+
                   <div style={{ textAlign: 'right', display: 'flex', alignItems: 'center', gap: '15px' }}>
                     <span style={{ fontWeight: 'bold', color: '#D4AF37', fontSize: '16px' }}>
                       {item.price}
@@ -186,7 +170,7 @@ export default function List() {
                 <button
                   onClick={(e) => {
                     e.preventDefault();
-                    toggleFavorite(item.id);
+                    toggleFavorite(item);
                   }}
                   style={{
                     padding: '15px 18px',
