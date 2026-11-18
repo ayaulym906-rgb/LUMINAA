@@ -6,12 +6,13 @@ import RingSizeGuideModal from '../components/RingSizeGuideModal';
 export default function Details({ onAdd }) {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { favorites, toggleFavorite } = useApp();
+  // Тауарлар енді Supabase базасынан келеді
+  const { products, productsLoading, favorites, toggleFavorite } = useApp();
   const [selectedSize, setSelectedSize] = useState('17');
-  
+
   // Модалды терезе үшін state
   const [isSizeGuideOpen, setIsSizeGuideOpen] = useState(false);
-  
+
   // Пікірлерге арналған стейттер
   const [reviews, setReviews] = useState([
     { id: 1, name: 'Айжан М.', rating: 5, text: 'Өте әдемі әшекей! Суреттегіден де керемет көрінеді, сапасы жоғары.', date: '12.10.2026' },
@@ -21,137 +22,34 @@ export default function Details({ onAdd }) {
   const [newText, setNewText] = useState('');
   const [newRating, setNewRating] = useState(5);
 
-  // Барлық өнімдер тізімі (мінездемелерімен бірге)
-  const allProducts = [
-    { 
-      id: 1, 
-      title: 'Lumina Gold Гауһар Алқасы', 
-      category: 'Алқа', 
-      price: '85 000 ₸', 
-      image: '/images/alka.jpeg', 
-      description: 'Табиғи гауһар тастармен көмкерілген ерекше сапалы алтын алқа.',
-      specs: { metal: '585 пробалы алтын', stone: 'Табиғи гауһар (Классикалық круглый)', weight: '4.2 г', warranty: '1 жыл ресми кепілдік' }
-    },
-    { 
-      id: 2, 
-      title: 'Silver Shine Күміс Сақинасы', 
-      category: 'Сақина', 
-      price: '32 000 ₸', 
-      image: '/images/saqina.jpeg', 
-      description: 'Жоғары сапалы 925 пробалы күмістен жасалған классикалық сақина.',
-      specs: { metal: '925 пробалы күміс', stone: 'Циркон', weight: '2.8 г', warranty: '1 жыл ресми кепілдік' }
-    },
-    { 
-      id: 3, 
-      title: 'Crystal Swan Аққу Сырғасы', 
-      category: 'Сырға', 
-      price: '45 000 ₸', 
-      image: '/images/aqqu.jpeg', 
-      description: 'Аққу бейнесіндегі нәзік әрі жарқыраған сырғалар жиынтығы.',
-      specs: { metal: '925 пробалы күміс (алтын жалатылған)', stone: 'Австриялық кристалл', weight: '3.5 г', warranty: '1 жыл ресми кепілдік' }
-    },
-    { 
-      id: 4, 
-      title: 'Royal Pearl Маржан Білезігі', 
-      category: 'Білезік', 
-      price: '60 000 ₸', 
-      image: '/images/bilezik.jpeg', 
-      description: 'Қолдың сұлулығын айқындайтын премиум кластағы маржанды білезік.',
-      specs: { metal: '585 пробалы алтын жалату', stone: 'Табиғи маржан', weight: '6.0 г', warranty: '1 жыл ресми кепілдік' }
-    },
-    { 
-      id: 5, 
-      title: 'Golden Sun Алтын Жүзігі', 
-      category: 'Сақина', 
-      price: '75 000 ₸', 
-      image: '/images/zhuzik.jpeg', 
-      description: 'Ерекше дизайнмен жасалған салтанатты кештерге арналған алтын жүзік.',
-      specs: { metal: '585 пробалы алтын', stone: 'Жартылай асыл тастар', weight: '5.1 г', warranty: '1 жыл ресми кепілдік' }
-    },
-    { 
-      id: 6, 
-      title: 'Diamond Drop Бриллиант Алқасы', 
-      category: 'Алқа', 
-      price: '120 000 ₸', 
-      image: '/images/saqina.jpeg', 
-      description: 'Таза бриллиантпен көмкерілген салтанатты әрі жарқыраған алқа.',
-      specs: { metal: '750 пробалы ақ алтын', stone: 'Табиғи бриллиант (Овал огранкасы)', weight: '5.4 г', warranty: '1 жыл ресми кепілдік' }
-    },
-    {
-      id: 7,
-      title: 'Lumina Classic Сағат Баулығы',
-      category: 'Аксессуар',
-      price: '95 000 ₸',
-      image: '/images/sagat.jpeg',
-      description: 'Швейцариялық механизмі мен сапалы былғары бауы бар классикалық сағат.',
-      specs: { metal: 'Шын былғары / Болат', stone: 'Тастарсыз', weight: '6.7 г', warranty: '1 жыл ресми кепілдік' }
-    },
-    {
-      id: 8,
-      title: 'Eternal Sparkle Гауһар Сырғасы',
-      category: 'Сырға',
-      price: '110 000 ₸',
-      image: '/images/eki-syrga.jpg',
-      description: 'Керемет гауһар тастары бар әрі сәнді ұзын сырғалар.',
-      specs: { metal: '585 пробалы ақ алтын', stone: 'Табиғи гауһар (Триллион огранкасы)', weight: '4.0 г', warranty: '1 жыл ресми кепілдік' }
-    },
-    {
-      id: 9,
-      title: 'Royal Heart Сақинасы',
-      category: 'Сақина',
-      price: '145 000 ₸',
-      image: '/images/royal-saqina.jpeg',
-      description: '59 гранды жүрек пішінді сиқырлы бриллиантпен көмкерілген романтикалық жүзік.',
-      specs: { metal: '750 пробалы ақ алтын', stone: 'Табиғи бриллиант («Сердце» огранкасы)', weight: '4.8 г', warranty: '2 жыл ресми кепілдік' }
-    },
-    {
-      id: 10,
-      title: 'Emerald Empress Алқасы',
-      category: 'Алқа',
-      price: '180 000 ₸',
-      image: '/images/alka.jpeg',
-      description: 'Тастың мөлдірлігі мен тереңдігін айқындайтын ступичатый огранкалы алқа.',
-      specs: { metal: '585 пробалы сары алтын', stone: 'Мөлдір сапфир («Изумруд» огранкасы)', weight: '7.5 г', warranty: '2 жыл ресми кепілдік' }
-    },
-    {
-      id: 11,
-      title: 'Asscher Luminesce Сырғасы',
-      category: 'Сырға',
-      price: '135 000 ₸',
-      image: '/images/syrga2.jpeg',
-      description: 'Винтажды және заманауи стильді біріктіретін квадрат пішінді сырға.',
-      specs: { metal: '925 пробалы платина жалатылған күміс', stone: 'Бриллиант («Ашер» огранкасы)', weight: '4.3 г', warranty: '1 жыл ресми кепілдік' }
-    },
-    {
-      id: 12,
-      title: 'Cushion Royal Білезік Комплекті',
-      category: 'Білезік',
-      price: '210 000 ₸',
-      image: '/images/bilezik.jpeg',
-      description: 'Жұмсақ бұрышты, королдік стильдегі эксклюзивті білезік пен сақина жиынтығы.',
-      specs: { metal: '585 пробалы ақ алтын', stone: 'Таза бриллиант («Кушон» огранкасы)', weight: '12.0 г', warranty: '3 жыл ресми кепілдік' }
-    },
-    {
-      id: 13,
-      title: '«Aurum & Platinum Duet» Брошьы',
-      category: 'Аксессуар',
-      price: '450 000 ₸',
-      image: '/images/brosh.jpeg',
-      description: 'Жарық пен жылудың үйлесімі.',
-      specs: { metal: '750 пробалы ақ алтын', stone: '585 пробалы сары алтын ', weight: '1.5 карат', warranty: '3 жыл ресми кепілдік' }
-    },
-    {
-      id: 14,
-      title: '«The Diamond Cascade» Брошьы',
-      category: 'Аксессуар',
-      price: '800 000 ₸',
-      image: '/images/brosh1.jpeg',
-      description: 'Тазалық пен жарқыраудың шыңы.',
-      specs: { metal: 'Табиғи бриллиант', stone: 'Таза бриллиант (Огранка:Ашер)', weight: '1.8 карат', warranty: '3 жыл ресми кепілдік' }
-    }
-  ];
+  const product = products.find((p) => String(p.id) === String(id));
 
-  const product = allProducts.find(p => p.id === Number(id)) || allProducts[0];
+  // Тауарлар жүктелгенше күтеміз
+  if (productsLoading) {
+    return (
+      <div style={{ maxWidth: '1000px', margin: '60px auto', textAlign: 'center', color: '#666', fontFamily: 'sans-serif' }}>
+        Жүктелуде...
+      </div>
+    );
+  }
+
+  // Тауар табылмаса
+  if (!product) {
+    return (
+      <div style={{ maxWidth: '1000px', margin: '60px auto', textAlign: 'center', fontFamily: 'sans-serif' }}>
+        <p style={{ color: '#666', marginBottom: '20px' }}>Тауар табылмады.</p>
+        <button
+          onClick={() => navigate('/list')}
+          style={{ background: '#D4AF37', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold' }}
+        >
+          Каталогқа оралу
+        </button>
+      </div>
+    );
+  }
+
+  const specs = product.specs || {};
+  const hasSpecs = specs.metal || specs.stone || specs.weight || specs.warranty;
   const isFav = favorites.some(f => f.id === product.id);
   const isRing = product.category === 'Сақина';
   const sizes = ['16', '17', '18', '19'];
@@ -176,7 +74,7 @@ export default function Details({ onAdd }) {
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', fontFamily: 'sans-serif', paddingBottom: '50px' }}>
-      <button 
+      <button
         onClick={() => navigate(-1)}
         style={{ background: 'none', border: 'none', color: '#D4AF37', cursor: 'pointer', fontSize: '14px', fontWeight: '600', marginBottom: '20px' }}
       >
@@ -205,7 +103,7 @@ export default function Details({ onAdd }) {
               {product.category}
             </span>
             <h2 style={{ fontSize: '26px', margin: '15px 0 10px 0', color: '#111', fontWeight: '500' }}>{product.title}</h2>
-            
+
             {/* Рейтинг жұлдызшалары */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '5px', marginBottom: '15px' }}>
               <span style={{ color: '#f39c12', fontSize: '16px' }}>★★★★★</span>
@@ -213,18 +111,22 @@ export default function Details({ onAdd }) {
             </div>
 
             <p style={{ fontSize: '24px', fontWeight: 'bold', color: '#D4AF37', margin: '0 0 15px 0' }}>{product.price}</p>
-            <p style={{ fontSize: '14px', color: '#555', lineHeight: '1.6', marginBottom: '20px' }}>{product.description}</p>
+            {product.description && (
+              <p style={{ fontSize: '14px', color: '#555', lineHeight: '1.6', marginBottom: '20px' }}>{product.description}</p>
+            )}
 
             {/* Техникалық мінездемелер */}
-            <div style={{ backgroundColor: '#fdfbf7', padding: '15px', borderRadius: '10px', border: '1px solid #f0e6d2', marginBottom: '20px' }}>
-              <h4 style={{ fontSize: '13px', color: '#111', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>✨ Өнім сипаттамасы:</h4>
-              <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '13px', color: '#555', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <li><strong>Металл:</strong> {product.specs.metal}</li>
-                <li><strong>Тас түрі:</strong> {product.specs.stone}</li>
-                <li><strong>Салмағы:</strong> {product.specs.weight}</li>
-                <li><strong>Кепілдік:</strong> {product.specs.warranty}</li>
-              </ul>
-            </div>
+            {hasSpecs && (
+              <div style={{ backgroundColor: '#fdfbf7', padding: '15px', borderRadius: '10px', border: '1px solid #f0e6d2', marginBottom: '20px' }}>
+                <h4 style={{ fontSize: '13px', color: '#111', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>✨ Өнім сипаттамасы:</h4>
+                <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '13px', color: '#555', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  {specs.metal && <li><strong>Металл:</strong> {specs.metal}</li>}
+                  {specs.stone && <li><strong>Тас түрі:</strong> {specs.stone}</li>}
+                  {specs.weight && <li><strong>Салмағы:</strong> {specs.weight}</li>}
+                  {specs.warranty && <li><strong>Кепілдік:</strong> {specs.warranty}</li>}
+                </ul>
+              </div>
+            )}
 
             {/* Өлшемді таңдау (тек сақинаға) */}
             {isRing && (
@@ -259,7 +161,7 @@ export default function Details({ onAdd }) {
             )}
           </div>
 
-          <button 
+          <button
             onClick={() => onAdd(isRing ? { ...product, size: selectedSize } : product)}
             style={{ width: '100%', padding: '14px', backgroundColor: '#D4AF37', color: '#fff', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', fontSize: '15px', boxShadow: '0 4px 15px rgba(212,175,55,0.3)' }}
           >
@@ -294,7 +196,7 @@ export default function Details({ onAdd }) {
         <form onSubmit={handleAddReview} style={{ borderTop: '1px solid #eee', paddingTop: '20px' }}>
           <h4 style={{ fontSize: '15px', marginBottom: '15px', color: '#333' }}>Өз пікіріңізді қалдырыңыз</h4>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px', marginBottom: '15px' }}>
-            <input 
+            <input
               type="text"
               placeholder="Аты-жөніңіз..."
               value={newAuthor}
@@ -302,7 +204,7 @@ export default function Details({ onAdd }) {
               style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #ccc', fontSize: '13px', outline: 'none' }}
               required
             />
-            <select 
+            <select
               value={newRating}
               onChange={(e) => setNewRating(e.target.value)}
               style={{ padding: '10px 14px', borderRadius: '6px', border: '1px solid #ccc', fontSize: '13px', outline: 'none', background: '#fff' }}
@@ -314,7 +216,7 @@ export default function Details({ onAdd }) {
               <option value="1">⭐ (1 - Өте нашар)</option>
             </select>
           </div>
-          <textarea 
+          <textarea
             placeholder="Пікіріңізді жазыңыз..."
             value={newText}
             onChange={(e) => setNewText(e.target.value)}
@@ -322,7 +224,7 @@ export default function Details({ onAdd }) {
             style={{ width: '100%', padding: '10px 14px', borderRadius: '6px', border: '1px solid #ccc', fontSize: '13px', outline: 'none', marginBottom: '15px', resize: 'vertical' }}
             required
           ></textarea>
-          <button 
+          <button
             type="submit"
             style={{ padding: '10px 24px', backgroundColor: '#111', color: '#D4AF37', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '13px' }}
           >
@@ -332,9 +234,9 @@ export default function Details({ onAdd }) {
       </div>
 
       {/* Сақина өлшемін анықтау модалды терезесі */}
-      <RingSizeGuideModal 
-        isOpen={isSizeGuideOpen} 
-        onClose={() => setIsSizeGuideOpen(false)} 
+      <RingSizeGuideModal
+        isOpen={isSizeGuideOpen}
+        onClose={() => setIsSizeGuideOpen(false)}
       />
     </div>
   );
